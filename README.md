@@ -18,7 +18,7 @@ Once you can run the `dotnet` command, we can easily create a new CLI .Net proje
 dotnet new console
 ```
 
-This will create all the required C# files required to be able to compile our programs which resides in the `Program.vs` file. We've run `dotnet new console` in <a href="./models/model-1">models/model-1</a> which populates <a href="./models/model-1/Program.cs">models/model-1/Program.cs</a> with:
+This will create all the required C# files required to be able to compile our programs which resides in the `Program.vs` file. We've run `dotnet new console` in <a href="https://github.com/infer-dot-net/0-base-repo/tree/v0.1.0/models/model-1">models/model-1</a> which populates <a href="https://raw.githubusercontent.com/infer-dot-net/0-base-repo/v0.1.0/models/model-1/Program.cs">models/model-1/Program.cs</a> with:
 
 
 ```csharp
@@ -42,7 +42,7 @@ Now you should be able to run
 dotnet run
 ```
 
-in <a href="./models/model-1">models/model-1</a> to get the output:
+in <a href="https://github.com/infer-dot-net/0-base-repo/tree/v0.1.0/models/model-1">models/model-1</a> to get the output:
 
 ```log
 Hello World!
