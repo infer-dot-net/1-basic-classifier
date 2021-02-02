@@ -48,3 +48,12 @@ in <a href="https://github.com/infer-dot-net/0-base-repo/tree/v0.1.0/models/mode
 Hello World!
 ```
 
+We've versioned up to this point as <a href="">v0.1.0</a>, so you can always restore this repo to just the hello word code whenever you want. However, we are here to build models, so we'll change the content of <a href="./models/model-1/Program.cs">models/model-1/Program.cs</a> to hold a coin flip model example that we'll call from our Jupyter notebook.
+
+First we'll need to install a the inferDotNet package.
+
+`cd` into  <a href="./models/model-1">models/model-1</a> and run
+
+```
+
+```
