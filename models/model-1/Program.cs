@@ -1,58 +1,90 @@
-﻿// https://dotnet.github.io/infer/userguide/Two%20coins%20tutorial.html
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-
-using System;
-using Microsoft.ML.Probabilistic.Models;
-using Microsoft.ML.Probabilistic.Algorithms;
-using Microsoft.ML.Probabilistic.Compiler;
-using Microsoft.ML.Probabilistic.Distributions;
-
-namespace TwoCoins
+﻿using System;
+using Range = Microsoft.ML.Probabilistic.Models.Range;
+using M = Microsoft.ML.Probabilistic.Models;
+using At = Microsoft.ML.Probabilistic.Models.Attributes;
+using D = Microsoft.ML.Probabilistic.Distributions;
+using A = Microsoft.ML.Probabilistic.Algorithms;
+using System.IO;
+using System.Text;
+namespace model
 {
-
     class Program
     {
         static void Main(string[] args)
         {
-            Variable<bool> firstCoin = Variable.Bernoulli(0.5).Named("firstCoin");
-            Variable<bool> secondCoin = Variable.Bernoulli(0.5).Named("secondCoin");
-            Variable<bool> bothHeads = (firstCoin & secondCoin).Named("bothHeads");
 
+            // Reading in the data
+            string dataDir = args[0];
+            string datasetFilename = dataDir+args[1];
+            string[] lines = File.ReadAllLines(datasetFilename);
+            bool[] isSetosaLabel = new bool[lines.Length];
+            double[] featureVal = new double[lines.Length];
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string[] strArray = lines[i].Split('|');
+                isSetosaLabel[i] = strArray[1] == "1.0";
+                
+                featureVal[i] = float.Parse(strArray[0]);
+            }
+
+            // Creating the model
+            int numberOfSample = lines.Length;
+            Range n = new Range(numberOfSample).Named("n");
+
+            // Make sure that the range across flowers is handled sequentially
+            n.AddAttribute(new At.Sequential());
+
+            // Variables
+
+            // The feature - x
+            M.VariableArray<double> featureValues = M.Variable.Array<double>(n).Named("featureValue").Attrib(new At.DoNotInfer());
+            // The label - y
+            M.VariableArray<bool> isSetosa = M.Variable.Array<bool>(n).Named("isSetosa");
+
+            // The weight - w
+            M.Variable<double> weight = M.Variable.GaussianFromMeanAndVariance(0,1).Named("weight");     
+            // The threshold
+            M.Variable<double> threshold = M.Variable.GaussianFromMeanAndVariance(0,10).Named("threshold");
+
+            // Loop over Ns
+            using (M.Variable.ForEach(n))
+            {
+                var score = (featureValues[n] * weight).Named("score");
+
+                var noisyScore = M.Variable.GaussianFromMeanAndVariance(score, 100).Named("noisyScore");
+                isSetosa[n] = noisyScore > threshold;
+            }
 
             /********* observations *********/
-            // bothHeads.ObservedValue = true;
-            secondCoin.ObservedValue = true;
+            isSetosa.ObservedValue = isSetosaLabel;
+            featureValues.ObservedValue = featureVal;
             /*******************************/
 
             /********** inference **********/
-            var InferenceEngine = new InferenceEngine();
-            
-            InferenceEngine.NumberOfIterations = 50;
-            // InferenceEngine.ShowFactorGraph = true;
+            var engine = new M.InferenceEngine(new A.ExpectationPropagation());
+            // var InferenceEngine = new InferenceEngine(new VariationalMessagePassing());
+            engine.NumberOfIterations = 50;
+            // engine.ShowFactorGraph = true;
 
-            Bernoulli postBothHeads = InferenceEngine.Infer<Bernoulli>(bothHeads);
+            D.Gaussian postWeight = engine.Infer<D.Gaussian>(weight);
+            D.Gaussian postThreshold = engine.Infer<D.Gaussian>(threshold);
             /*******************************/
 
-            Console.WriteLine(postBothHeads);
+            Console.WriteLine(postWeight);
+            Console.WriteLine(postThreshold);
 
             // write outputs to file
-            // var results = new StringBuilder();
+            var results = new StringBuilder();
 
-            // results.AppendLine("variable;mean;variance");
-            // var line = string.Format("postWeight;{0};{1}", postWeight.GetMean(), postWeight.GetVariance());
-            // results.AppendLine(line.Replace(',', '.'));
-            // line = string.Format("postThreshold;{0};{1}", postThreshold.GetMean(), postThreshold.GetVariance());
-            // results.AppendLine(line.Replace(',', '.'));
+            results.AppendLine("variable;mean;variance");
+            var line = string.Format("postWeight;{0};{1}", postWeight.GetMean(), postWeight.GetVariance());
+            results.AppendLine(line.Replace(',', '.'));
+            line = string.Format("postThreshold;{0};{1}", postThreshold.GetMean(), postThreshold.GetVariance());
+            results.AppendLine(line.Replace(',', '.'));
 
-            // File.WriteAllText(dataDir + "results.csv", results.ToString());
+            File.WriteAllText(dataDir+"results.csv", results.ToString());
             
-            // bothHeads.ObservedValue = true;
-            // Console.WriteLine("Probability distribution over firstCoin: " + engine.Infer(firstCoin));
-
-            // engine.ShowFactorGraph = true;
-            // engine.ShowMsl = true;
         }
     }
 }

@@ -1,3 +1,10 @@
+# Mac Funnies
+*.DS_Store
+
+# GViz outputs
+*.svg
+*.gv
+
 # Prerequisites
 *.d
 
